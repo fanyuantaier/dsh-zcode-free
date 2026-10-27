@@ -1,0 +1,16 @@
+{
+  "name": "dsh-zcode-free",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local OpenAI-compatible bridge exposing ZCode's free zcode-plan quota (zcode.z.ai) to DeepSeek Harness.",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs",
+    "models": "node cli.mjs models",
+    "balance": "node cli.mjs balance",
+    "selftest": "node cli.mjs selftest"
+  },
+  "engines": { "node": ">=18.17" },
+  "license": "MIT"
+}
