@@ -1,16 +1,19 @@
 # dsh-zcode-free
 
+[English](README.md) · [简体中文](README.zh-CN.md)
+
 Local **OpenAI-compatible bridge** that exposes ZCode's free *zcode-plan* quota
 (`https://zcode.z.ai`) to DeepSeek Harness, plus the DSH wiring that registers
 those models as a first-class provider.
 
 > **背景 / Background** — ZCode（Z.ai 的编程 agent 桌面端）向免费 Start Plan 用户
-> **每天发放 3 亿 token** 的免费额度（GLM-5.3-Flash 每日 3 亿，GLM-5.3 每日 2 亿，
-> 当日有效）。本项目把这份额度从桌面客户端里解放出来：本地起一个
-> OpenAI 兼容的 HTTP 桥（`:11451`），任何 OpenAI 客户端都能直接调用这些模型。
+> **每天发放 3 亿 token** 的免费额度（仅 GLM-5.3-Flash，当日有效；GLM-5.3 目前
+> 不再享有每日额度）。本项目把这份额度从桌面客户端里解放出来：本地起一个
+> OpenAI 兼容的 HTTP 桥（`:11451`），任何 OpenAI 客户端都能直接调用该模型。
 > ZCode (Z.ai's coding-agent desktop app) grants free Start Plan accounts
-> **300M tokens per day**; this bridge exposes that daily quota through a local
-> OpenAI-compatible endpoint.
+> **300M tokens per day** (GLM-5.3-Flash only; GLM-5.3 currently has no daily
+> quota); this bridge exposes that daily quota through a local OpenAI-compatible
+> endpoint.
 
     DSH  -->  pi-ai openai-completions  -->  http://127.0.0.1:11451/v1
                                      (this bridge, OpenAI wire in)
@@ -26,16 +29,16 @@ those models as a first-class provider.
 | --- | --- |
 | Local login discovery (`~/.zcode/v2/credentials.json`, AES-256-GCM) | jwt 255 chars, device mid `1aa52c08-...`, app `3.14.5` |
 | `GET /api/v1/zcode-plan/billing/balance` | HTTP 200 |
-| `GET /v1/models` through the bridge | HTTP 200 - 2 entitled models with live quota |
-| `GET /v1/balance` through the bridge | HTTP 200 - plan + 2 buckets |
+| `GET /v1/models` through the bridge | HTTP 200 - 1 entitled model (GLM-5.3-Flash) with live quota |
+| `GET /v1/balance` through the bridge | HTTP 200 - plan + 1 bucket |
 | OpenAI <-> Anthropic translation | 30/30 assertions (`node cli.mjs selftest`) |
 | `POST /v1/chat/completions` | **HTTP 429 / code 3012** - upstream captcha gate; after ~24 h it escalates to a WAF block page (429 `zcode_waf_blocked`, `retry-after: 86400`) - see §4 |
 
-Live quota at the time of writing (`ZCode 1024 Dev Day`, plan id
-`zcode-v3-start-plan-1024`, status `active`, until `1792976400`):
+Live quota at the time of writing (2026-10-27, plan `ZCODE GLOBAL BUILD`,
+plan id `zcode-v3-start-plan-1027`, status `active`, ends `1793149200`):
 
-    GLM-5.3-Flash   291,210,437 / 300,000,000 tokens remaining
-    GLM-5.3          198,909,111 / 200,000,000 tokens remaining
+    GLM-5.3-Flash   287,426,965 / 300,000,000 tokens remaining
+    GLM-5.3          no daily quota on the free Start Plan (entitlement removed)
 
 The entitled model list is derived from the balance entitlements
 (`capabilities: ["model:glm-5.3-flash"]`), not from the full builtin catalog,
@@ -93,7 +96,11 @@ Direct, if you prefer:
           maxTokens: 128000
 
 Model ids shown to the agent become `zcode-free/glm-5.3-flash` and
-`zcode-free/glm-5.3` after a profile reload.
+`zcode-free/glm-5.3` after a profile reload. **As of 2026-10-27 only
+`glm-5.3-flash` is actually servable** — the free Start Plan dropped the
+GLM-5.3 daily entitlement, so `/v1/models` returns one model and any call to
+`zcode-free/glm-5.3` will be rejected upstream. The profile entry is kept
+harmlessly; trim it if you prefer a single-model list.
 
 `C:\Users\Lenovo\.dsh\.credentials.yaml` gained a `ZCODE_CREDENTIAL` ref:
 
